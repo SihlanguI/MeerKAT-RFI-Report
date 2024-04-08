@@ -27,7 +27,7 @@ output_notebook()
 class PlotFreqTimeStats:
     """Collect RFI statistics for frequency-time plot."""
     def __init__(self, dataset: katdal.DataSet, **kwargs) -> None:
-        self.unixtime = dataset.timestamps[0:5]
+        self.unixtime = dataset.timestamps  # Unix timestamps
         self.frequency = dataset.freqs/1e6  # Frequency in MHz
         self.x_range = Range1d(self.frequency.min(), self.frequency.max())
         self.y_range = Range1d(0, len(self.unixtime))
@@ -107,9 +107,8 @@ class PlotFreqTimeStats:
         step = nscans//len(targets)+1
         indices = np.arange(0, nscans)[::step]+10
         y_ticks_dic = {}
-        for i in range(len(targets[0:5])):
-            #y_ticks_dic[str(indices[i])] = targets[i]
-            y_ticks_dic[str(i)] = targets[0:5][i]
+        for i in range(len(targets)):
+            y_ticks_dic[str(indices[i])] = targets[i]
         return y_ticks_dic
 
     def make_plots(self, pol, dataset: katdal.DataSet) -> Dict[str, bokeh.model.Model]:
@@ -123,7 +122,7 @@ class PlotFreqTimeStats:
                 dataset.select(scans='track', corrprods='cross', flags=flags[i], pol=pol)
             else:
                 dataset.select(scans='track', corrprods='cross', pol=pol)
-            two_d_array = np.mean(dataset.flags[0:5, :, 0:2], axis=2)
+            two_d_array = np.mean(dataset.flags[:, :, :], axis=2)
             source = self.make_rfi_stats_data_source(two_d_array)
             fig = self.freq_time_fig(dataset, flags[i], pol, source)
             plots_source[flags[i]] = fig
@@ -138,22 +137,22 @@ class PlotFreqTimeStats:
             logging.info('Processing {} polarization'.format(pols[i]))
             plots_per_pol[pols[i]] = self.make_plots(pols[i], dataset)
         return plots_per_pol
-    
-    def write_metadata(self, dataset: katdal.DataSet, 
-                      filename: str) -> None:
+
+    def write_metadata(self, dataset: katdal.DataSet,
+                       filename: str) -> None:
         metadata = {
             'ProductType': {
                 'ProductTypeName': 'MeerKATReductionProduct',
                 'ReductionName': 'RFIReport'
             },
-            'Description' : dataset.obs_params['description'],
+            'Description': dataset.obs_params['description'],
             'ScheduleBlockIdCode': dataset.obs_params['sb_id_code'],
-            'ProposalId' : dataset.obs_params['proposal_id'],
-            'CaptureBlockId' : dataset.obs_params['capture_block_id']
+            'ProposalId': dataset.obs_params['proposal_id'],
+            'CaptureBlockId': dataset.obs_params['capture_block_id']
         }
         with open(filename, 'w') as f:
             json.dump(metadata, f, allow_nan=False, indent=2)
-            
+
     def create_main_html(self, main_filename, other_html_files, output_dir):
         # Content of main HTML file
         main_html_content = """
@@ -191,10 +190,10 @@ class PlotFreqBaseline(PlotFreqTimeStats):
 
     def __init__(self, dataset: katdal.DataSet, **kwargs) -> None:
         self.path_bl_csv = kwargs['path_bl_csv']
-        self.frequency = dataset.freqs/1e6 # Frequency in MHz
-        self.unixtime = dataset.timestamps
+        self.frequency = dataset.freqs/1e6  # Frequency in MHz
+        self.unixtime = dataset.timestamps  # Unix timestamps
         self.x_range = Range1d(self.frequency.min(), self.frequency.max())
-        self.ordered_bl = self.get_bl_idx(dataset)[1][1000:1100]
+        self.ordered_bl = self.get_bl_idx(dataset)[1]
         self.y_range = Range1d(self.ordered_bl.min(), self.ordered_bl.max())
 
     def get_bl_idx(self, dataset: katdal.DataSet):
@@ -253,8 +252,8 @@ class PlotFreqBaseline(PlotFreqTimeStats):
                 dataset.select(scans='track', corrprods='cross', flags=flags[i], pol=pol)
             else:
                 dataset.select(scans='track', corrprods='cross', pol=pol)
-            two_d_array = np.mean(dataset.flags[0:5, :, :], axis=0)
-            bl_idx = self.get_bl_idx(dataset)[0][1000:1100]
+            two_d_array = np.mean(dataset.flags[:, :, :], axis=0)
+            bl_idx = self.get_bl_idx(dataset)[0]
             two_d_array = two_d_array[:, bl_idx]
             source = self.make_rfi_stats_data_source(two_d_array.T)
             fig = self.freq_time_fig(dataset, flags[i], pol, source)
@@ -341,5 +340,3 @@ class RfiReportLayout:
         # save html layout into disk
         bokeh.plotting.output_file(filename, mode='inline')
         return bokeh.plotting.show(layout)
-
-
