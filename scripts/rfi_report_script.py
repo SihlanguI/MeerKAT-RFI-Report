@@ -51,15 +51,14 @@ def main() -> None:
                 rfi_stats = mkat_rfi_report.PlotFreqTimeStats(dataset)
             if val == 'freq_baseline':
                 rfi_stats = mkat_rfi_report.PlotFreqBaseline(dataset, path_bl_csv=path_bl_csv)
-            
+
             plots = rfi_stats.collect_plots(dataset)
             logging.info('Creating bokeh report for {}'.format(val))
             layout = mkat_rfi_report.RfiReportLayout(plots)
             layout.create_layout(filename)
             if i == 0:
                 os.rename(tmp_dir, output_dir)
-            destination_path = os.path.join(output_dir,  filename)
-            shutil.move(filename, destination_path)
+            shutil.move(filename, output_dir)
         except Exception:
             # Make a best effort to clean up
             shutil.rmtree(tmp_dir, ignore_errors=True)
