@@ -44,44 +44,13 @@ class PlotFreqTimeStats:
         data = {'image': two_d_array}
         return bokeh.models.ColumnDataSource(data)
 
-    def format_fig(self, title, pol):
-        if pol == 'HH':
-            if title == 'data_lost' or title == 'ingest_rfi' or title == 'combined_flags':
-                fig = bokeh.plotting.figure(
-                    x_axis_label='',
-                    y_axis_label='Pol HH Scans',
-                    sizing_mode='stretch_width',
-                    title=title,
-                    width=500, height=500
-                    )
-                if title == 'combined_flags':
-                    fig.width = 1000
-            else:
-                fig = bokeh.plotting.figure(
-                    x_axis_label='',
-                    y_axis_label='',
-                    sizing_mode='stretch_width',
-                    title=title,
-                    width=500, height=500
-                    )
-        else:
-            if title == 'data_lost' or title == 'ingest_rfi' or title == 'combined_flags':
-                fig = bokeh.plotting.figure(
-                    x_axis_label='Frequency MHz',
-                    y_axis_label='Pol VV Scans',
-                    sizing_mode='stretch_width',
-                    title='',
-                    width=500, height=500)
-                if title == 'combined_flags':
-                    fig.width = 1000
-            else:
-                fig = bokeh.plotting.figure(
-                    x_axis_label='Frequency MHz',
-                    y_axis_label='',
-                    sizing_mode='stretch_width',
-                    title='',
-                    width=500, height=500
-                    )
+    def format_fig(self, title, pol, dataset: katdal.DataSet):
+        fig = bokeh.plotting.figure(
+        x_axis_label='Frequency MHz',
+        y_axis_label=('Pol {} Scans').format(pol),
+        sizing_mode='stretch_width',
+        title=title,
+        width=1000, height=500, toolbar_location='above')
         return fig
 
     def freq_time_fig(self, dataset: katdal.DataSet, title, pol,
@@ -274,69 +243,39 @@ class PlotFreqBaseline(PlotFreqTimeStats):
             palette="Viridis256")
         return fig
 
-    def format_fig(self, title, pol):
-        if pol == 'HH':
-            if title == 'data_lost' or title == 'ingest_rfi' or title == 'combined_flags':
-                fig = bokeh.plotting.figure(
-                    x_axis_label='',
-                    y_axis_label='Pol HH Baseline length [m]',
-                    sizing_mode='stretch_width',
-                    title=title,
-                    width=500, height=500
-                    )
-                if title == 'combined_flags':
-                    fig.width = 1000
-            else:
-                fig = bokeh.plotting.figure(
-                    x_axis_label='',
-                    y_axis_label='',
-                    sizing_mode='stretch_width',
-                    title=title,
-                    width=500, height=500,
-                    )
-        else:
-            if title == 'data_lost' or title == 'ingest_rfi' or title == 'combined_flags':
-                fig = bokeh.plotting.figure(
-                    x_axis_label='Frequency MHz',
-                    y_axis_label='Pol VV Baseline length [m]',
-                    sizing_mode='stretch_width',
-                    title='',
-                    width=500, height=500,
-                    )
-                if title == 'combined_flags':
-                    fig.width = 1000
-            else:
-                fig = bokeh.plotting.figure(
-                    x_axis_label='Frequency MHz',
-                    y_axis_label='',
-                    sizing_mode='stretch_width',
-                    title='',
-                    width=500, height=500,
-                    )
-        return fig
+      def format_fig(self, title, pol, dataset: katdal.DataSet):    
+        fig = bokeh.plotting.figure(
+            x_axis_label='Frequency [MHz]',
+            y_axis_label=('Pol {} Baseline length [m]').format(pol),
+            sizing_mode='stretch_width',
+            title=title,
+            width=1000, height=500, toolbar_location='above')
 
 
 class RfiReportLayout:
     """Create RFI Report layout"""
     def __init__(self, bokeh_models, **kwargs) -> None:
-        self.plots = bokeh_models
-
-    def create_layout(self, filename):
+            self.plots = bokeh_models
+            self.cbid = kwargs['cbid']
+    def create_layout(self):
         plots = self.plots
         HH = plots['HH']
         VV = plots['VV']
         system_flags = column(HH['combined_flags'], VV['combined_flags'])
-        detected_flags = gridplot([[HH['ingest_rfi'], HH['cal_rfi']],
-                                   [VV['ingest_rfi'], VV['cal_rfi']]])
-        instrument_flags = gridplot([[HH['data_lost'], HH['cam']],
-                                     [VV['data_lost'], VV['cam']]])
+        ingest_flags = column( HH['ingest_rfi'], VV['ingest_rfi'])
+        cal_flags = column( HH['cal_rfi'], VV['cal_rfi'])
+        data_lost = column(HH['data_lost'],VV['data_lost'] )
+        cam_flags = column( HH['cam'], VV['cam'])
         # Create tabs
-        tab1 = Panel(child=system_flags, title='System flags')
-        tab2 = Panel(child=detected_flags, title='Detected RFI flags')
-        tab3 = Panel(child=instrument_flags, title='Instrumantation flags')
-
+        tab1 = Panel(child=system_flags, title='All flags')
+        tab2 = Panel(child=ingest_flags, title='Ingest RFI flags')
+        tab3 = Panel(child=cal_flags, title='Cal RFI flags')
+        tab4 = Panel(child=data_lost, title='data RFI flags')
+        tab5 = Panel(child=cam_flags, title='cam RFI flags')
+        
         # create a layout from tabs
-        layout = Tabs(tabs=[tab1, tab2, tab3])
+        layout = Tabs(tabs=[tab1, tab2, tab3, tab4, tab5])
         # save html layout into disk
-        bokeh.plotting.output_file(filename, mode='inline')
-        return bokeh.plotting.show(layout)
+        filename='MeerKAT_RFI_Report_'+str(self.cbid)+'.html'
+        output_file(filename, mode='inline')
+        return show(layout)

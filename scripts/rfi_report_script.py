@@ -7,7 +7,7 @@ import uuid
 
 import katdal
 
-import mkat_rfi_report
+import katrfireport.mkat_rfi_report as report
 
 
 def initialize_logs():
@@ -48,13 +48,13 @@ def main() -> None:
             filename = (cbid + '_' + '{}' + '_' + args.prefix + '_' + 'report.html').format(val)
             html_files.append(filename)
             if val == 'freq_time':
-                rfi_stats = mkat_rfi_report.PlotFreqTimeStats(dataset)
+                rfi_stats = report.PlotFreqTimeStats(dataset)
             if val == 'freq_baseline':
-                rfi_stats = mkat_rfi_report.PlotFreqBaseline(dataset, path_bl_csv=path_bl_csv)
+                rfi_stats = report.PlotFreqBaseline(dataset, path_bl_csv=path_bl_csv)
 
             plots = rfi_stats.collect_plots(dataset)
             logging.info('Creating bokeh report for {}'.format(val))
-            layout = mkat_rfi_report.RfiReportLayout(plots)
+            layout = report.RfiReportLayout(plots)
             layout.create_layout(filename)
             if i == 0:
                 os.rename(tmp_dir, output_dir)
