@@ -21,7 +21,6 @@ from bokeh.models.widgets import Tabs
 from bokeh.models import Range1d
 import warnings
 warnings.filterwarnings('ignore')
-output_notebook()
 
 
 class PlotFreqTimeStats:
