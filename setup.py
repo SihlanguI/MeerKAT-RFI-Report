@@ -11,8 +11,8 @@ setup(
     packages=['katrfireport'],
     install_requires=['bokeh==2.3.3',
                       'katdal==0.20.1',
-                      'numpy==1.19.5'
-                      'pandas==1.1.5',                     
+                      'numpy==1.19.5',
+                      'pandas==1.1.5'                     
                       ],
 
     classifiers=[
